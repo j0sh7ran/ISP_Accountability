@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Data (SQLite database - keep if you want evidence, remove for clean repo)
+data/network-sla.db
+!data/.gitkeep
+
+# Exports (reports generated)
+exports/*.pdf
+exports/*.csv
+exports/*.json
+!exports/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs (optional - remove if you don't want to track logs in git)
+logs/*.log

@@ -1,0 +1,15 @@
+# ISP Accountability Monitor - Python dependencies
+# Install with: pip install -r requirements.txt
+
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Optional: psutil for system info
+psutil==5.9.6
+
+# Optional: aiohttp for async HTTP (not required for MVP)
+# aiohttp==3.9.1
+
+# Optional: httpx for HTTP/2 support (future enhancement)
+# httpx==0.24.1

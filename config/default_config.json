@@ -1,0 +1,81 @@
+{
+  "application": {
+    "name": "ISP Accountability Monitor",
+    "version": "1.0.0",
+    "port": 8000,
+    "host": "0.0.0.0",
+    "log_level": "INFO"
+  },
+  "probes": {
+    "interval_seconds": 2,
+    "gateway": {
+      "enabled": true,
+      "count": 3,
+      "timeout_ms": 1000
+    },
+    "icmp": {
+      "enabled": true,
+      "targets": [
+        "1.1.1.1",
+        "8.8.8.8",
+        "9.9.9.9"
+      ],
+      "count": 4,
+      "timeout_ms": 2000
+    },
+    "tcp": {
+      "enabled": true,
+      "targets": [
+        {"host": "1.1.1.1", "port": 443},
+        {"host": "8.8.8.8", "port": 443}
+      ],
+      "timeout_seconds": 2.0
+    },
+    "https": {
+      "enabled": true,
+      "targets": [
+        "https://1.1.1.1/",
+        "https://cloudflare-dns.com/"
+      ],
+      "timeout_seconds": 5.0
+    },
+    "dns": {
+      "enabled": true,
+      "resolvers": [
+        "1.1.1.1",
+        "8.8.8.8",
+        "9.9.9.9"
+      ]
+    }
+  },
+  "detection": {
+    "minimum_duration_seconds": 30,
+    "minimum_failed_probes": 3,
+    "required_targets_for_upstream_failure": 2
+  },
+  "sla": {
+    "default_policy": {
+      "name": "Standard ISP SLA",
+      "availability_target": 99.99,
+      "measurement_period": "monthly",
+      "max_outage_duration_seconds": 300,
+      "exclusion_rules": [
+        "planned_maintenance",
+        "force_majeure"
+      ]
+    }
+  },
+  "retention": {
+    "max_database_size_mb": 50000,
+    "auto_cleanup_enabled": true,
+    "cleanup_interval_hours": 24
+  },
+  "simulation": {
+    "enabled": false,
+    "scenarios_path": "simulator/scenarios.json"
+  },
+  "notifications": {
+    "enable_notifications": false,
+    "notification_methods": ["email", "webhook"]
+  }
+}

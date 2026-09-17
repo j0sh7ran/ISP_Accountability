@@ -176,7 +176,7 @@ def test_https_handshake(
 def probe_with_payload(
     host: str,
     port: int = 80,
-    payload: bytes = b"GET / HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n".format(host=host),
+    payload: bytes | None = None,
     timeout_seconds: float = 2.0,
 ) -> dict:
     """Send actual HTTP request with small payload."""

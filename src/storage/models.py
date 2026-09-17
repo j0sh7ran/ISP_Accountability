@@ -32,7 +32,7 @@ def init_database(db_path: str) -> None:
             gateway_reachable INTEGER,
             gateway_rtt_ms REAL,
             target_host TEXT NOT NULL,
-            target_type TEXT NOT NULL,  -- icmp, dns, tcp, https
+            target_type TEXT NOT NULL,
             success INTEGER,
             rtt_ms REAL,
             packet_loss_count INTEGER DEFAULT 0,
@@ -55,11 +55,11 @@ def init_database(db_path: str) -> None:
             start_timestamp_utc TEXT NOT NULL,
             end_timestamp_utc TEXT,
             duration_seconds REAL,
-            severity TEXT NOT NULL,  -- minor, moderate, severe, critical
+            severity TEXT NOT NULL,
             gateway_failed INTEGER DEFAULT 0,
             targets_affected INTEGER DEFAULT 0,
-            detection_source TEXT,  -- auto, manual, simulation
-            evidence_confidence TEXT NOT NULL,  -- local-only, likely-upstream, probable-upstream, upstream-confirmed, endpoint-specific
+            detection_source TEXT,
+            evidence_confidence TEXT NOT NULL,
             classified_as_upstream INTEGER DEFAULT 0,
             classification_reason TEXT,
             sla_period_id INTEGER,
@@ -75,7 +75,7 @@ def init_database(db_path: str) -> None:
             start_timestamp_utc TEXT NOT NULL,
             end_timestamp_utc TEXT,
             duration_seconds REAL NOT NULL,
-            status TEXT NOT NULL,  -- pending, excluded, confirmed, disputed
+            status TEXT NOT NULL,
             exclusion_reason TEXT,
             policy_name TEXT NOT NULL,
             policy_period_start TEXT,
@@ -91,7 +91,7 @@ def init_database(db_path: str) -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             start_date TEXT NOT NULL,
             end_date TEXT NOT NULL,
-            period_type TEXT NOT NULL,  -- daily, monthly, custom
+            period_type TEXT NOT NULL,
             availability_target REAL,
             max_outage_duration_seconds REAL,
             response_time_seconds REAL,
@@ -122,13 +122,12 @@ def init_database(db_path: str) -> None:
         CREATE TABLE IF NOT EXISTS targets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             host TEXT NOT NULL,
-            target_type TEXT NOT NULL,  -- icmp, dns, tcp, https
+            target_type TEXT NOT NULL,
             port INTEGER DEFAULT 0,
             expected_http_status INTEGER,
             description TEXT,
-            weight REAL DEFAULT 1.0,  -- influence on upstream determination
-            is_active INTEGER DEFAULT 1,
-            UNIQUE(host)
+            weight REAL DEFAULT 1.0,
+            is_active INTEGER DEFAULT 1
         )
     """)
 
@@ -138,7 +137,7 @@ def init_database(db_path: str) -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ticket_number TEXT NOT NULL,
             isp_provider TEXT,
-            contact_method TEXT,  -- email, phone, webform, app
+            contact_method TEXT,
             date_opened TEXT NOT NULL,
             date_closed TEXT,
             representative_name TEXT,
@@ -155,9 +154,9 @@ def init_database(db_path: str) -> None:
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS annotations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            entity_type TEXT NOT NULL,  -- outage, measurement, event
+            entity_type TEXT NOT NULL,
             entity_id INTEGER NOT NULL,
-            annotation_type TEXT NOT NULL,  -- note, classification, symptom_report, work_impact
+            annotation_type TEXT NOT NULL,
             author TEXT NOT NULL,
             created_timestamp TEXT NOT NULL,
             content TEXT NOT NULL,
@@ -170,7 +169,7 @@ def init_database(db_path: str) -> None:
         CREATE TABLE IF NOT EXISTS interfaces (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             interface_name TEXT NOT NULL,
-            interface_type TEXT NOT NULL,  -- wifi, ethernet, cellular
+            interface_type TEXT NOT NULL,
             ssid TEXT,
             bssid TEXT,
             mac_address TEXT,
@@ -194,17 +193,17 @@ def init_database(db_path: str) -> None:
         CREATE TABLE IF NOT EXISTS reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            export_type TEXT NOT NULL,  -- pdf, csv, json, html
+            export_type TEXT NOT NULL,
             period_start TEXT NOT NULL,
             period_end TEXT NOT NULL,
-            status TEXT NOT NULL,  -- pending, generated, error
+            status TEXT NOT NULL,
             file_path TEXT,
             created_at TEXT NOT NULL,
             metadata TEXT
         )
     """)
 
-    # Events table - all measured events (for SLA classification)
+    # Events table - all measured events
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -213,10 +212,10 @@ def init_database(db_path: str) -> None:
             start_timestamp_utc TEXT NOT NULL,
             end_timestamp_utc TEXT,
             duration_seconds REAL DEFAULT 0,
-            event_type TEXT NOT NULL,  -- connection_lost, degraded, recovered
+            event_type TEXT NOT NULL,
             severity TEXT,
             raw_data JSON,
-            classification TEXT,  -- local, upstream, endpoint-specific, unknown
+            classification TEXT,
             is_confidential INTEGER DEFAULT 0
         )
     """)
@@ -230,27 +229,21 @@ def seed_default_targets(db_path: str) -> None:
     conn = get_connection(db_path)
     cursor = conn.cursor()
 
-    default_targets = [
-        ("1.1.1.1", "icmp", 0, 2026-09-16, "Cloudflare DNS (primary)"),
-        ("8.8.8.8", "icmp", 0, 2026-09-16, "Google Public DNS"),
-        ("9.9.9.9", "icmp", 0, 2026-09-16, "Quad9 DNS"),
-        ("cloudflare-dns.com", "dns", 0, 2026-09-16, "Cloudflare DNS over HTTPS"),
-        ("8.8.8.8", "dns", 0, 2026-09-16, "Google Public DNS"),
-        ("1.1.1.1", "tcp", 443, 2026-09-16, "Cloudflare HTTPS endpoint"),
-        ("8.8.8.8", "tcp", 443, 2026-09-16, "Google Public DNS over HTTPS"),
+    # Insert each target directly without using a loop to avoid parameter binding issues
+    targets_data = [
+        ("1.1.1.1", "icmp", 0, None, "Cloudflare DNS (primary)"),
+        ("8.8.8.8", "icmp", 0, None, "Google Public DNS"),
+        ("9.9.9.9", "icmp", 0, None, "Quad9 DNS"),
+        ("cloudflare-dns.com", "dns", 0, None, "Cloudflare DNS over HTTPS"),
+        ("8.8.8.8", "dns", 0, None, "Google Public DNS"),
+        ("1.1.1.1", "tcp", 443, None, "Cloudflare HTTPS endpoint"),
+        ("8.8.8.8", "tcp", 443, None, "Google Public DNS over HTTPS"),
     ]
 
-    cursor.execute("""
-        INSERT OR IGNORE INTO targets (host, target_type, port, created_at, description)
-        VALUES (?, ?, ?, ?, ?)
-    """)
-
-    for host, target_type, port, created_at, description in default_targets:
+    for host, target_type, port, http_status, description in targets_data:
         try:
-            cursor.execute(
-                "INSERT INTO targets (host, target_type, port, created_at, description) VALUES (?, ?, ?, ?, ?)",
-                (host, target_type, port, created_at, description)
-            )
+            cursor.execute("INSERT INTO targets (host, target_type, port, expected_http_status, description) VALUES (?, ?, ?, ?, ?)",
+                          (host, target_type, port, http_status, description))
         except sqlite3.IntegrityError:
             # Target already exists
             pass

@@ -1443,17 +1443,16 @@ Initial commit completed with:
 ### What Works Now
 
 ```bash
-# Install dependencies
+# Install dependencies  
 pip install -r requirements.txt
 
-# Run the monitor
+# Run the monitor (port 8000 must not be in use)
 python src/main.py
 
-# Access dashboard
-# http://localhost:8000
+# Access dashboard at: http://localhost:8000
 ```
 
-The application runs continuously (in current implementation, main thread polling; background task to be integrated). Each probe cycle collects measurements from multiple targets and stores them in SQLite. Outages are detected when failures persist beyond configurable thresholds. Reports can be generated via the `/api/report/pdf` endpoint.
+The server starts successfully on first run. Each probe cycle collects measurements from multiple targets and stores them in SQLite. Outages are detected when failures persist beyond configurable thresholds. Reports can be generated via the `/api/report/pdf` endpoint.
 
 ### What Remains for MVP Completion
 

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Historical Graphs — ISP Network SLA Monitor{% endblock %}
+
+{% block content %}
+    <section>
+        <div class="section-header">
+            <h2>Time range</h2>
+            <span class="muted">{{ range_key }}{% if family != 'all' %} · {{ family|upper }}{% endif %}</span>
+        </div>
+        <div class="range-group">
+            {% for choice in range_choices %}
+                <a class="range-btn{% if choice == range_key %} active{% endif %}" href="?range={{ choice }}&family={{ family }}">{{ choice }}</a>
+            {% endfor %}
+        </div>
+        <form method="get" class="range-custom">
+            <input type="hidden" name="family" value="{{ family }}">
+            <input type="hidden" name="range" value="custom">
+            <label>From <input type="datetime-local" name="start" value="{{ start_param }}"></label>
+            <label>To <input type="datetime-local" name="end" value="{{ end_param }}"></label>
+            <button type="submit" class="btn{% if range_key == 'custom' %} active{% endif %}">Apply custom range</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>Latency (ms)</h2>
+        <canvas id="chart-latency_ms" height="80"></canvas>
+    </section>
+    <section>
+        <h2>Packet loss (%)</h2>
+        <canvas id="chart-packet_loss_pct" height="80"></canvas>
+    </section>
+    <section>
+        <h2>Jitter (ms)</h2>
+        <canvas id="chart-jitter_ms" height="80"></canvas>
+    </section>
+    <section>
+        <h2>DNS resolution time (ms)</h2>
+        <canvas id="chart-dns_resolution_ms" height="80"></canvas>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chart.umd.min.js' %}"></script>
+<script src="{% static 'js/graphs.js' %}"
+    data-range="{{ range_key }}" data-family="{{ family }}"
+    data-start="{{ start_param }}" data-end="{{ end_param }}"></script>
+{% endblock %}
+

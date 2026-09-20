@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net" version="24.0.0">
+  <diagram name="Incident and SLA Flow" id="incident-sla-flow">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="raw" value="Raw Measurements&#10;(per probe category)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="1">
+          <mxGeometry x="40" y="160" width="170" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="state" value="Network State Machine&#10;(confirmation thresholds)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="1">
+          <mxGeometry x="260" y="160" width="180" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event" value="Event&#10;(typed: OUTAGE, PACKET_LOSS,&#10;DNS_FAILURE, ROUTE_CHANGE, ...)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="1">
+          <mxGeometry x="490" y="160" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="incident" value="Incident Correlation&#10;(groups related Events + evidence)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="1">
+          <mxGeometry x="740" y="160" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sla" value="SLA Evaluation Engine&#10;(SLARule vs. evidence window)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1">
+          <mxGeometry x="1010" y="40" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="report" value="Report Generator&#10;(HTML/PDF/CSV/JSON)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1">
+          <mxGeometry x="1010" y="160" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="baseline" value="Baseline Comparison&#10;(read-only, UI-distinct from SLA)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1">
+          <mxGeometry x="1010" y="280" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dashboard" value="Dashboard: Incident view,&#10;SLA view, Reports, Baseline view" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="1">
+          <mxGeometry x="1260" y="160" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" edge="1" parent="1" source="raw" target="state" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="state" target="event" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="event" target="incident" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="incident" target="sla" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="incident" target="report" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="incident" target="baseline" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="sla" target="dashboard" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="report" target="dashboard" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="baseline" target="dashboard" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

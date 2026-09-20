@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monthly Report — {{ period_start|date:"F Y" }}</title>
+    <style>
+        body { font-family: sans-serif; font-size: 12px; }
+        h1, h2 { color: #2b6cb0; }
+        table { width: 100%; margin-bottom: 1em; }
+        th, td { border: 1px solid #999; padding: 4px 6px; text-align: left; }
+        .uncertain { color: #a94442; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>Monthly Report — {{ period_start|date:"F Y" }}</h1>
+    <p>Period: {{ period_start }} – {{ period_end }}. Generated {{ generated_at }}.</p>
+
+    <h2>Summary</h2>
+    <table>
+        <tr><th>Uptime %</th><td>{{ stats.uptime_pct|floatformat:3 }}</td></tr>
+        <tr><th>Avg latency (ms)</th><td>{{ stats.latency_ms|floatformat:1|default:"—" }}</td></tr>
+        <tr><th>Avg packet loss (%)</th><td>{{ stats.packet_loss_pct|floatformat:2|default:"—" }}</td></tr>
+        <tr><th>Avg jitter (ms)</th><td>{{ stats.jitter_ms|floatformat:1|default:"—" }}</td></tr>
+        <tr><th>Avg DNS resolution (ms)</th><td>{{ stats.dns_resolution_ms|floatformat:1|default:"—" }}</td></tr>
+        <tr><th>Outages</th><td>{{ stats.outage_count }}</td></tr>
+        <tr><th>Route changes</th><td>{{ stats.route_change_count }}</td></tr>
+    </table>
+
+    <h2>Incidents this period</h2>
+    <table>
+        <thead><tr><th>Type</th><th>Start</th><th>End</th><th>Duration (s)</th><th>Severity</th></tr></thead>
+        <tbody>
+        {% for incident in incidents %}
+            <tr>
+                <td>{{ incident.get_type_display }}</td>
+                <td>{{ incident.start_time }}</td>
+                <td>{{ incident.end_time|default:"ongoing" }}</td>
+                <td>{{ incident.duration_seconds|default:"—" }}</td>
+                <td>{{ incident.get_severity_display }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="uncertain">No incidents recorded this period.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>SLA evaluations this period</h2>
+    <table>
+        <thead><tr><th>Rule</th><th>Status</th><th>Observed</th><th>Threshold</th><th>Window</th></tr></thead>
+        <tbody>
+        {% for evaluation in sla_evaluations %}
+            <tr>
+                <td>{{ evaluation.rule.name }}</td>
+                <td>{{ evaluation.get_status_display }}</td>
+                <td>{{ evaluation.observed_value|floatformat:2|default:"—" }}</td>
+                <td>{{ evaluation.threshold_value }}</td>
+                <td>{{ evaluation.window_start }} – {{ evaluation.window_end }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="uncertain">No SLA rules evaluated this period, or none are configured.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

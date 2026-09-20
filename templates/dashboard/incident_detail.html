@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Incident #{{ incident.id }} — ISP Network SLA Monitor{% endblock %}
+
+{% block content %}
+    <section>
+        <h2>{{ incident.get_type_display }}</h2>
+        <p>
+            <strong>Start:</strong> {{ incident.start_time }}<br>
+            <strong>End:</strong> {{ incident.end_time|default:"ongoing" }}<br>
+            <strong>Duration:</strong> {{ incident.duration_seconds|default:"—" }}s<br>
+            <strong>Severity:</strong> {{ incident.get_severity_display }}<br>
+            <strong>Status:</strong> {{ incident.get_recovery_status_display }}<br>
+            <strong>Affected tests:</strong> {{ incident.affected_tests|join:", " }}<br>
+            <strong>Affected destinations:</strong> {{ incident.affected_destinations|join:", " }}
+        </p>
+    </section>
+
+    <section>
+        <h3>Events (evidence)</h3>
+        <ul>
+        {% for event in events %}
+            <li>{{ event.get_type_display }} ({{ event.start_time }} – {{ event.end_time|default:"ongoing" }}): {{ event.description }}</li>
+        {% empty %}
+            <li>No events linked yet.</li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    <section>
+        <h3>SLA evaluations</h3>
+        <ul>
+        {% for evaluation in sla_evaluations %}
+            <li>{{ evaluation.rule.name }}: <strong>{{ evaluation.get_status_display }}</strong>
+                (observed {{ evaluation.observed_value|floatformat:2 }} vs threshold {{ evaluation.threshold_value }})</li>
+        {% empty %}
+            <li>No SLA rules matched this incident (or none are configured).</li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    <section>
+        <h3>Reports</h3>
+        <ul>
+        {% for report in incident.reports.all %}
+            <li><a href="{% url 'reports:download' report.id %}">{{ report.get_format_display }} report</a> (generated {{ report.generated_at }})</li>
+        {% empty %}
+            <li>No reports generated yet — reports are auto-generated when the incident closes.</li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    <section>
+        <h3>Nearby connectivity state transitions</h3>
+        <ul>
+        {% for log in state_logs %}
+            <li>{{ log.timestamp }}: {{ log.previous_state }} → {{ log.new_state }} ({{ log.reason }})</li>
+        {% empty %}
+            <li>None recorded in this window.</li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    <section>
+        <h3>Nearby raw ICMP measurements (±10 min)</h3>
+        <table>
+            <thead><tr><th>Timestamp</th><th>Target</th><th>Loss %</th><th>Avg RTT (ms)</th><th>Error</th></tr></thead>
+            <tbody>
+            {% for m in nearby_icmp %}
+                <tr>
+                    <td>{{ m.timestamp }}</td>
+                    <td>{{ m.target.name }}</td>
+                    <td>{{ m.loss_pct }}</td>
+                    <td>{{ m.avg_rtt_ms|floatformat:1|default:"—" }}</td>
+                    <td>{{ m.error }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5">No measurements in this window.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

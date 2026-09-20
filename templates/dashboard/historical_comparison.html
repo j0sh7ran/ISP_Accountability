@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Historical Comparison — ISP Network SLA Monitor{% endblock %}
+
+{% block content %}
+    <p>Current {{ hours }}h period vs. the previous {{ hours }}h period. Underlying figures shown side
+    by side — not collapsed into a single score.</p>
+    <table>
+        <thead><tr><th>Metric</th><th>Current period</th><th>Previous period</th></tr></thead>
+        <tbody>
+            <tr><td>Uptime %</td><td>{{ current.uptime_pct|floatformat:3 }}</td><td>{{ previous.uptime_pct|floatformat:3 }}</td></tr>
+            <tr><td>Avg latency (ms)</td><td>{{ current.latency_ms|floatformat:1|default:"—" }}</td><td>{{ previous.latency_ms|floatformat:1|default:"—" }}</td></tr>
+            <tr><td>Avg packet loss (%)</td><td>{{ current.packet_loss_pct|floatformat:2|default:"—" }}</td><td>{{ previous.packet_loss_pct|floatformat:2|default:"—" }}</td></tr>
+            <tr><td>Avg jitter (ms)</td><td>{{ current.jitter_ms|floatformat:1|default:"—" }}</td><td>{{ previous.jitter_ms|floatformat:1|default:"—" }}</td></tr>
+            <tr><td>Avg DNS resolution (ms)</td><td>{{ current.dns_resolution_ms|floatformat:1|default:"—" }}</td><td>{{ previous.dns_resolution_ms|floatformat:1|default:"—" }}</td></tr>
+            <tr><td>Outages</td><td>{{ current.outage_count }}</td><td>{{ previous.outage_count }}</td></tr>
+            <tr><td>Route changes</td><td>{{ current.route_change_count }}</td><td>{{ previous.route_change_count }}</td></tr>
+        </tbody>
+    </table>
+{% endblock %}

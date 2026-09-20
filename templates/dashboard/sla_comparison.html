@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}SLA Comparison — ISP Network SLA Monitor{% endblock %}
+
+{% block content %}
+    <p>Observed values compared against your entered ISP contract terms. This is contractual, not a
+    generic industry reference — see <a href="{% url 'dashboard:baseline_comparison' %}">Baseline Comparison</a> for that.</p>
+    <table>
+        <thead><tr><th>Rule</th><th>Observed</th><th>Threshold</th><th>Status</th><th>Window</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td>{{ row.rule.name }}</td>
+                <td>{{ row.evaluation.observed_value|floatformat:2|default:"—" }}</td>
+                <td>{{ row.rule.operator }} {{ row.rule.threshold }}{{ row.rule.unit }}</td>
+                <td>{{ row.evaluation.get_status_display|default:"Not yet evaluated" }}</td>
+                <td>{% if row.evaluation %}{{ row.evaluation.window_start }} – {{ row.evaluation.window_end }}{% else %}—{% endif %}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5">No SLA rules configured yet — add your ISP's contract terms in the admin.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

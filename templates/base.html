@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}ISP Network SLA Monitor{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand"><span class="brand-mark"></span> ISP Network SLA Monitor</div>
+        <nav>
+            <a href="{% url 'dashboard:overview' %}">Overview</a>
+            <a href="{% url 'dashboard:graphs' %}">Historical Graphs</a>
+            <a href="{% url 'dashboard:incidents_list' %}">Incidents</a>
+            <a href="{% url 'reports:list' %}">Reports</a>
+            <a href="{% url 'dashboard:sla_comparison' %}">SLA Comparison</a>
+            <a href="{% url 'dashboard:baseline_comparison' %}">Baseline Comparison</a>
+            <a href="{% url 'dashboard:historical_comparison' %}">Historical Comparison</a>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

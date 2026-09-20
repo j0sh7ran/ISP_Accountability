@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Overview — ISP Network SLA Monitor{% endblock %}
+
+{% block content %}
+    {% if elevated is False %}
+        <section class="elevation-warning">
+            <strong>Not running as Administrator.</strong> Raw ICMP probes and some interface
+            statistics require elevation — those measurements may be degraded or show as errors
+            until the worker is run elevated. See docs/SETUP_AND_OPERATIONS.md.
+        </section>
+    {% endif %}
+
+    <section id="state-banner" class="state-banner state-{{ state }}">
+        <div class="stat-grid" style="flex:1;">
+            <div class="stat-card">
+                <div class="stat-label">Network state</div>
+                <div class="stat-value" id="state-value">{{ state|upper }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Uptime (24h)</div>
+                <div class="stat-value"><span id="uptime-value">{{ uptime_pct|floatformat:2 }}</span>%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active incidents</div>
+                <div class="stat-value" id="active-incident-value">{{ active_incidents|length }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Recent SLA breaches</div>
+                <div class="stat-value" id="sla-violation-value">{{ sla_violations|length }}</div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="section-header">
+            <h2><span class="live-dot"></span> Live job status</h2>
+            <span class="muted">Updated <span id="jobs-updated">just now</span></span>
+        </div>
+        <p class="page-intro">
+            What the background worker is doing right now — one card per scheduled probe category,
+            read straight from the shared database (near real-time, ~5s refresh).
+            {% if job_summary.pending_on_demand %}
+                <strong>{{ job_summary.pending_on_demand }}</strong> on-demand test(s) queued/running.
+            {% endif %}
+        </p>
+        <div class="job-grid" id="job-grid">
+        {% for job in job_summary.jobs %}
+            <div class="job-card" data-task-type="{{ job.task_type }}">
+                <div class="job-card-header">
+                    <span class="job-name">{{ job.label }}</span>
+                    <span class="badge job-status-badge
+                        {% if job.status == 'ok' %}badge-ok
+                        {% elif job.status == 'overdue' or job.status == 'error' %}badge-danger
+                        {% elif job.status == 'pending' %}badge-info
+                        {% else %}badge-muted{% endif %}"
+                        data-status="{{ job.status }}">{{ job.status }}</span>
+                </div>
+                <div class="job-meta job-last-run">
+                    Last run: <strong>{% if job.last_run %}{{ job.seconds_since_last_run|floatformat:0 }}s ago{% else %}never{% endif %}</strong>
+                </div>
+                <div class="job-meta">Every {{ job.interval_seconds }}s</div>
+                <div class="job-meta job-recent-count">
+                    {% if job.recent_count is not None %}
+                        <strong>{{ job.recent_count }}</strong> recent sample(s){% if job.error_count %}, <strong>{{ job.error_count }}</strong> errored{% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p class="muted">No schedule configs found.</p>
+        {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h2>Address family</h2>
+        <a href="?family=ipv4">IPv4 only</a> |
+        <a href="?family=ipv6">IPv6 only</a> |
+        <a href="?">Combined</a>
+    </section>
+
+    <section>
+        <h2>Connectivity (ICMP)</h2>
+        <table id="icmp-table">
+            <thead><tr><th>Target</th><th>Address</th><th>Loss %</th><th>Avg RTT (ms)</th><th>Last probe</th></tr></thead>
+            <tbody>
+            {% for row in icmp_rows %}
+                <tr>
+                    <td>{{ row.target.name }}</td>
+                    <td>{{ row.target.address }}</td>
+                    <td>{{ row.measurement.loss_pct|default:"—" }}</td>
+                    <td>{{ row.measurement.avg_rtt_ms|floatformat:1|default:"—" }}</td>
+                    <td>{{ row.measurement.timestamp|default:"no data yet" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5">No confirming targets configured yet — add some in the admin.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>DNS</h2>
+        <table>
+            <thead><tr><th>Resolver</th><th>Result</th><th>Resolution time (ms)</th><th>Last probe</th></tr></thead>
+            <tbody>
+            {% for row in dns_rows %}
+                <tr>
+                    <td>{{ row.target.name }}</td>
+                    <td>{{ row.measurement.result_type|default:"—" }}</td>
+                    <td>{{ row.measurement.resolution_time_ms|floatformat:1|default:"—" }}</td>
+                    <td>{{ row.measurement.timestamp|default:"no data yet" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">No DNS targets configured yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>HTTP/HTTPS</h2>
+        <table>
+            <thead><tr><th>Endpoint</th><th>Status</th><th>Total time (ms)</th><th>Last probe</th></tr></thead>
+            <tbody>
+            {% for row in http_rows %}
+                <tr>
+                    <td>{{ row.target.name }}</td>
+                    <td>
+                        {% if row.measurement %}
+                            {{ row.measurement.status_code|default:row.measurement.error_type|default:"—" }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>{{ row.measurement.total_time_ms|floatformat:1|default:"—" }}</td>
+                    <td>{{ row.measurement.timestamp|default:"no data yet" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">No HTTP targets configured yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Active incidents ({{ active_incidents|length }})</h2>
+        <ul>
+        {% for incident in active_incidents %}
+            <li><a href="{% url 'dashboard:incident_detail' incident.id %}">{{ incident.get_type_display }} — started {{ incident.start_time }}</a></li>
+        {% empty %}
+            <li>None — connectivity is healthy.</li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    <section>
+        <h2>Recent incidents</h2>
+        <ul>
+        {% for incident in recent_incidents %}
+            <li><a href="{% url 'dashboard:incident_detail' incident.id %}">{{ incident.get_type_display }} — {{ incident.start_time }} ({{ incident.recovery_status }})</a></li>
+        {% empty %}
+            <li>No incidents recorded yet.</li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    <section>
+        <h2>Recent SLA violations</h2>
+        <ul>
+        {% for evaluation in sla_violations %}
+            <li>{{ evaluation.rule.name }}: observed {{ evaluation.observed_value|floatformat:2 }} vs threshold {{ evaluation.threshold_value }} ({{ evaluation.window_start }} – {{ evaluation.window_end }})</li>
+        {% empty %}
+            <li>No SLA breaches recorded yet.</li>
+        {% endfor %}
+        </ul>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}" data-family="{{ family }}"></script>
+{% endblock %}
+

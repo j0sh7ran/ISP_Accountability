@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Industry Baseline Comparison — ISP Network SLA Monitor{% endblock %}
+
+{% block content %}
+    <p>Descriptive comparison only — not a pass/fail judgment and not your ISP's contract. See
+    <a href="{% url 'dashboard:sla_comparison' %}">SLA Comparison</a> for contractual evaluation.
+    Window: last {{ hours }}h.</p>
+    <table>
+        <thead><tr><th>Metric</th><th>Observed</th><th>Baseline</th><th>Difference</th><th>Source</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td>{{ row.metric }}</td>
+                <td>{{ row.observed|floatformat:2|default:"—" }}</td>
+                {% if row.comparison %}
+                    <td>{{ row.comparison.baseline.value }}{{ row.comparison.baseline.unit }}</td>
+                    <td>{{ row.comparison.difference|floatformat:2 }} ({{ row.comparison.pct_difference|floatformat:1 }}%)</td>
+                    <td>{{ row.comparison.baseline.source }}</td>
+                {% else %}
+                    <td colspan="3">No baseline configured for this metric yet, or no recent data.</td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

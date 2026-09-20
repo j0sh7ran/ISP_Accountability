@@ -1,0 +1,51 @@
+<mxfile host="app.diagrams.net" version="24.0.0">
+  <diagram name="Entity Overview (app-grouped)" id="er-overview">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="820" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="core" value="core&#10;Target, ScheduleConfig,&#10;RetentionPolicy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="1">
+          <mxGeometry x="40" y="300" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="measurements" value="measurements&#10;ICMP/DNS/HTTP/TCP/Throughput/&#10;Bufferbloat/Route(+Hop)/RouteChange/&#10;MTU/InterfaceMetric" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="1">
+          <mxGeometry x="300" y="280" width="240" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="network_state" value="network_state&#10;NetworkStateLog, Event" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="1">
+          <mxGeometry x="600" y="300" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="incidents" value="incidents&#10;Incident, EventEvidence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="1">
+          <mxGeometry x="860" y="300" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sla" value="sla&#10;SLARule, SLAEvaluation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1">
+          <mxGeometry x="860" y="80" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="baselines" value="baselines&#10;Baseline (versioned)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1">
+          <mxGeometry x="600" y="80" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="reports" value="reports&#10;Report" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="1">
+          <mxGeometry x="1120" y="300" width="180" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aggregates" value="aggregates&#10;HourlyAggregate, DailyAggregate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="1">
+          <mxGeometry x="300" y="480" width="240" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" value="FK (Target)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="core" target="measurements"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" value="feeds state evaluation" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="measurements" target="network_state"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" value="Events grouped into Incidents" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="network_state" target="incidents"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" value="evaluated against" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="incidents" target="sla"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" value="generates" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="incidents" target="reports"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" value="included in" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="sla" target="reports"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e7" value="rolled up over time" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="measurements" target="aggregates"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8" value="compared at query time&#10;(no FK, matched by metric name)" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=block;" edge="1" parent="1" source="baselines" target="measurements"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Incidents — ISP Network SLA Monitor{% endblock %}
+
+{% block content %}
+    <p>
+        Export: <a href="{% url 'reports:export_incidents' %}?format=csv">CSV</a> |
+        <a href="{% url 'reports:export_incidents' %}?format=json">JSON</a>
+        (last 30 days by default; add <code>?start=&amp;end=</code> ISO datetimes for a custom range)
+    </p>
+    <table>
+        <thead>
+            <tr><th>Type</th><th>Start</th><th>End</th><th>Duration (s)</th><th>Severity</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+        {% for incident in incidents %}
+            <tr>
+                <td><a href="{% url 'dashboard:incident_detail' incident.id %}">{{ incident.get_type_display }}</a></td>
+                <td>{{ incident.start_time }}</td>
+                <td>{{ incident.end_time|default:"ongoing" }}</td>
+                <td>{{ incident.duration_seconds|default:"—" }}</td>
+                <td>{{ incident.get_severity_display }}</td>
+                <td>{{ incident.get_recovery_status_display }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">No incidents recorded yet.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

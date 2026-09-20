@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Outage Report — Incident #{{ summary.incident_id }}</title>
+    <style>
+        body { font-family: sans-serif; font-size: 12px; }
+        h1, h2 { color: #2b6cb0; }
+        table { width: 100%; margin-bottom: 1em; }
+        th, td { border: 1px solid #999; padding: 4px 6px; text-align: left; }
+        .uncertain { color: #a94442; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>Outage Report — Incident #{{ summary.incident_id }}</h1>
+    <p>Generated {{ generated_at }}</p>
+
+    <h2>Summary</h2>
+    <table>
+        <tr><th>Start</th><td>{{ summary.start }}</td></tr>
+        <tr><th>End</th><td>{{ summary.end|default:"ongoing" }}</td></tr>
+        <tr><th>Duration (s)</th><td>{{ summary.duration_seconds|default:"—" }}</td></tr>
+        <tr><th>Recovery status</th><td>{{ summary.recovery_status }}</td></tr>
+        <tr><th>Affected tests</th><td>{{ summary.affected_tests|join:", " }}</td></tr>
+        <tr><th>Affected destinations</th><td>{{ summary.affected_destinations|join:", " }}</td></tr>
+    </table>
+
+    <h2>Evidence (Events)</h2>
+    <table>
+        <thead><tr><th>Type</th><th>Start</th><th>End</th><th>Description</th></tr></thead>
+        <tbody>
+        {% for event in events %}
+            <tr><td>{{ event.get_type_display }}</td><td>{{ event.start_time }}</td><td>{{ event.end_time|default:"—" }}</td><td>{{ event.description }}</td></tr>
+        {% empty %}
+            <tr><td colspan="4">No linked events.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Performance before the outage</h2>
+    <table>
+        <thead><tr><th>Timestamp</th><th>Target</th><th>Loss %</th><th>Avg RTT (ms)</th></tr></thead>
+        <tbody>
+        {% for m in performance_before %}
+            <tr><td>{{ m.timestamp }}</td><td>{{ m.target.name }}</td><td>{{ m.loss_pct }}</td><td>{{ m.avg_rtt_ms|default:"—" }}</td></tr>
+        {% empty %}
+            <tr><td colspan="4" class="uncertain">Unable to determine — no measurements in this window.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Performance during the outage</h2>
+    <table>
+        <thead><tr><th>Timestamp</th><th>Target</th><th>Loss %</th><th>Error</th></tr></thead>
+        <tbody>
+        {% for m in performance_during %}
+            <tr><td>{{ m.timestamp }}</td><td>{{ m.target.name }}</td><td>{{ m.loss_pct }}</td><td>{{ m.error|default:"—" }}</td></tr>
+        {% empty %}
+            <tr><td colspan="4" class="uncertain">Unable to determine — no measurements recorded in this window.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Recovery</h2>
+    <table>
+        <thead><tr><th>Timestamp</th><th>Target</th><th>Loss %</th><th>Avg RTT (ms)</th></tr></thead>
+        <tbody>
+        {% for m in performance_after %}
+            <tr><td>{{ m.timestamp }}</td><td>{{ m.target.name }}</td><td>{{ m.loss_pct }}</td><td>{{ m.avg_rtt_ms|default:"—" }}</td></tr>
+        {% empty %}
+            <tr><td colspan="4" class="uncertain">Unable to determine — no post-recovery measurements yet.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>SLA evaluation</h2>
+    <table>
+        <thead><tr><th>Rule</th><th>Status</th><th>Observed</th><th>Threshold</th></tr></thead>
+        <tbody>
+        {% for evaluation in sla_evaluations %}
+            <tr>
+                <td>{{ evaluation.rule.name }}</td>
+                <td>{{ evaluation.get_status_display }}</td>
+                <td>{{ evaluation.observed_value|default:"—" }}</td>
+                <td>{{ evaluation.threshold_value }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4" class="uncertain">No SLA rules matched this incident, or none are configured.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

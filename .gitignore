@@ -1,11 +1,37 @@
+# Virtual environment
 .venv/
+venv/
+
+# Python bytecode
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Test / lint / type-check caches
 .pytest_cache/
-db.sqlite3
-db.sqlite3-wal
-db.sqlite3-shm
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Django local state (never shared — see docs/SETUP_AND_OPERATIONS.md)
+db.sqlite3*
 staticfiles/
 media/
-*.log
 .env
+.env.*
+
+# Logs
+*.log
+
+# Playwright MCP browser-automation artifacts (screenshots/snapshots saved to the workspace)
+.playwright-mcp/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini

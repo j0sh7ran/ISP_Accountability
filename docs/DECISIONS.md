@@ -172,6 +172,16 @@ decision is later reversed, add a new dated entry explaining the change rather t
 | Operational docs | `docs/SETUP_AND_OPERATIONS.md` and `README.md` now give parallel Windows/Linux+macOS command blocks (venv activation paths, `sudo` instead of "Run as Administrator", systemd/launchd instead of Task Scheduler) | Matches the existing Windows-first documentation style, just duplicated per platform rather than trying to write shell-agnostic pseudo-commands. |
 | Not ported | Distribution/install docs remain "run from source" on all three platforms — no `.deb`/`.rpm`/Homebrew packaging, no code changes to `apps/measurements/probes/{dns,http,tcp,icmp,throughput,bufferbloat,interface}.py` (already cross-platform via `dnspython`/`requests`/`socket`/`icmplib`/`speedtest-cli`/`psutil`) | Out of scope — only the three genuinely Windows-only pieces (route, MTU, elevation) needed porting; everything else already worked cross-platform. |
 
+## 2026-09-20 — CSV import/export for configuration models
+
+| Decision | Choice | Rationale / notes |
+|---|---|---|
+| Implementation | Hand-rolled `apps/core/admin_csv.py::CSVImportExportMixin` (stdlib `csv`, a Django admin action for export + a custom admin view for import) rather than adding `django-import-export` | Matches this project's minimal-dependency pattern (same reasoning as xhtml2pdf-over-WeasyPrint, stdlib `csv` already used in `apps/reports/exports.py`); the actual requirement (upsert rows by a key, ignore unknown columns) is small enough not to need a formats/resources framework. |
+| Models covered | `Target`, `ScheduleConfig`, `RetentionPolicy` (`apps.core`), `StateMachineConfig` (`apps.network_state`), `SLARule` (`apps.sla`), `Baseline` (`apps.baselines`) | These are exactly the "configuration, not collected data" models per the existing admin split (measurement/incident/report/evaluation models stay read-only, as before) — i.e. everything a user would want to set up once on one machine and reuse on another. |
+| Upsert key per model | `Target`→`name`, `ScheduleConfig`→`task_type`, `RetentionPolicy`→`data_type`, `SLARule`→`name`, `Baseline`→`(metric, version, technology_type, geographic_scope)` (matches its `unique_together`), `StateMachineConfig`→ always `pk=1` (`csv_singleton=True`) | Re-importing the same export is idempotent (updates in place) rather than creating duplicates — verified live by exporting the real configured home-network `Target` rows and re-importing them (`Imported 0 new and updated 6 existing row(s)`, count stayed at 6). |
+| Row-level error handling | A bad row (e.g. non-numeric `interval_seconds`) is caught, reported back via Django's messages framework, and skipped — the rest of the file still imports | A single typo shouldn't block importing an otherwise-valid multi-row CSV; matches this app's general "record the error, don't crash" philosophy (e.g. probe error handling). |
+| UI | "Import CSV" link added next to "Add" on each covered model's changelist via `templates/admin/csv_changelist.html` overriding the `object-tools-items` block (the standard Django recipe for this) — no `django-import-export`-style widget replaces the existing "Export selected as CSV" admin action | Keeps both directions discoverable from the changelist without touching each individual `ModelAdmin`'s existing `list_display`/filters. |
+
 
 ## Open risks / flagged items
 

@@ -1,24 +1,31 @@
 from django.contrib import admin
 
+from .admin_csv import CSVImportExportMixin
 from .models import MeasurementCategory, OnDemandTestRequest, RetentionPolicy, ScheduleConfig, Target
 
 
 @admin.register(Target)
-class TargetAdmin(admin.ModelAdmin):
+class TargetAdmin(CSVImportExportMixin, admin.ModelAdmin):
     list_display = ('name', 'category', 'address', 'port', 'address_family', 'protocol', 'enabled')
     list_filter = ('category', 'address_family', 'protocol', 'enabled')
     search_fields = ('name', 'address')
+    csv_fields = ('name', 'category', 'address', 'address_family', 'protocol', 'port', 'enabled')
+    csv_key_fields = ('name',)
 
 
 @admin.register(ScheduleConfig)
-class ScheduleConfigAdmin(admin.ModelAdmin):
+class ScheduleConfigAdmin(CSVImportExportMixin, admin.ModelAdmin):
     list_display = ('task_type', 'interval_seconds', 'enabled', 'last_run')
     list_filter = ('enabled',)
+    csv_fields = ('task_type', 'interval_seconds', 'enabled')
+    csv_key_fields = ('task_type',)
 
 
 @admin.register(RetentionPolicy)
-class RetentionPolicyAdmin(admin.ModelAdmin):
+class RetentionPolicyAdmin(CSVImportExportMixin, admin.ModelAdmin):
     list_display = ('data_type', 'raw_retention_days', 'aggregate_retention_days')
+    csv_fields = ('data_type', 'raw_retention_days', 'aggregate_retention_days')
+    csv_key_fields = ('data_type',)
 
 
 @admin.register(OnDemandTestRequest)

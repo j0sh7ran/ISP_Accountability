@@ -1,0 +1,13 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+    <p>Upload a CSV with a header row. Existing rows (matched on their key column(s)) are updated;
+    everything else is created. See the model's "Export as CSV" admin action for the exact column
+    format.</p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" class="btn" value="Import">
+    </form>
+    <p><a href="..">Cancel</a></p>
+{% endblock %}

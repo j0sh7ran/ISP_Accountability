@@ -105,3 +105,38 @@ class EvaluateAndLogStateTests(TestCase):
         evaluate_and_log_state(now=now)
 
         self.assertEqual(Incident.objects.filter(recovery_status='ongoing').count(), 1)
+
+
+class StateMachineConfigAdminCSVImportTests(TestCase):
+    """The singleton config (csv_singleton=True in admin_csv.py) must update the one row, never
+    create a second one."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        user_model = get_user_model()
+        admin_user = user_model.objects.create_superuser('csvadmin', 'csvadmin@example.com', 'password123!')
+        self.client.force_login(admin_user)
+
+    def test_import_updates_the_singleton_row(self):
+        import io
+
+        from django.urls import reverse
+
+        StateMachineConfig.get_solo()  # ensure the row exists first, like it would in real use
+        csv_content = (
+            'consecutive_failures_for_degraded,consecutive_failures_for_offline,'
+            'min_independent_targets_failing,recovery_confirmation_successes,'
+            'micro_outage_threshold_seconds\n'
+            '3,6,1,5,90\n'
+        )
+        upload = io.BytesIO(csv_content.encode())
+        upload.name = 'state_machine_config.csv'
+
+        response = self.client.post(reverse('admin:network_state_statemachineconfig_import_csv'), {'csv_file': upload})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(StateMachineConfig.objects.count(), 1)
+        config = StateMachineConfig.get_solo()
+        self.assertEqual(config.consecutive_failures_for_offline, 6)
+        self.assertEqual(config.micro_outage_threshold_seconds, 90)

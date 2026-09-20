@@ -111,3 +111,91 @@ class ElevationTests(TestCase):
 
         with patch('apps.core.elevation.sys.platform', 'freebsd13'):
             self.assertIsNone(is_elevated())
+
+
+class AdminCSVImportExportTests(TestCase):
+    """Covers apps/core/admin_csv.py's CSVImportExportMixin via TargetAdmin/ScheduleConfigAdmin."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        user_model = get_user_model()
+        admin_user = user_model.objects.create_superuser('csvadmin', 'csvadmin@example.com', 'password123!')
+        self.client.force_login(admin_user)
+
+    def test_export_as_csv_action(self):
+        from django.urls import reverse
+
+        target = Target.objects.create(
+            name='Gateway', category=TargetCategory.GATEWAY, address='192.168.1.1', protocol=Protocol.ICMP,
+        )
+
+        response = self.client.post(reverse('admin:core_target_changelist'), {
+            'action': 'export_as_csv', '_selected_action': [str(target.pk)],
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        content = response.content.decode()
+        self.assertIn('Gateway', content)
+        self.assertIn('192.168.1.1', content)
+
+    def test_import_csv_creates_a_new_row(self):
+        import io
+
+        from django.urls import reverse
+
+        csv_content = (
+            'name,category,address,address_family,protocol,port,enabled\n'
+            'Home Router,gateway,192.168.0.1,ipv4,icmp,,true\n'
+        )
+        upload = io.BytesIO(csv_content.encode())
+        upload.name = 'targets.csv'
+
+        response = self.client.post(reverse('admin:core_target_import_csv'), {'csv_file': upload})
+
+        self.assertEqual(response.status_code, 302)
+        target = Target.objects.get(name='Home Router')
+        self.assertEqual(target.address, '192.168.0.1')
+        self.assertTrue(target.enabled)
+
+    def test_import_csv_updates_existing_row_by_key_field(self):
+        import io
+
+        from django.urls import reverse
+
+        Target.objects.create(
+            name='Gateway', category=TargetCategory.GATEWAY, address='old-address',
+            protocol=Protocol.ICMP, enabled=True,
+        )
+        csv_content = (
+            'name,category,address,address_family,protocol,port,enabled\n'
+            'Gateway,gateway,10.0.0.1,ipv4,icmp,,false\n'
+        )
+        upload = io.BytesIO(csv_content.encode())
+        upload.name = 'targets.csv'
+
+        self.client.post(reverse('admin:core_target_import_csv'), {'csv_file': upload})
+
+        self.assertEqual(Target.objects.count(), 1)
+        target = Target.objects.get(name='Gateway')
+        self.assertEqual(target.address, '10.0.0.1')
+        self.assertFalse(target.enabled)
+
+    def test_import_csv_reports_row_errors_without_failing_the_whole_import(self):
+        import io
+
+        from django.urls import reverse
+
+        csv_content = (
+            'task_type,interval_seconds,enabled\n'
+            'icmp,not-a-number,true\n'
+            'dns,300,true\n'
+        )
+        upload = io.BytesIO(csv_content.encode())
+        upload.name = 'schedules.csv'
+
+        response = self.client.post(reverse('admin:core_scheduleconfig_import_csv'), {'csv_file': upload})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ScheduleConfig.objects.get(task_type='dns').interval_seconds, 300)

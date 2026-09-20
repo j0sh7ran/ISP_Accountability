@@ -16,7 +16,7 @@ from .probes.http import run_http_probe
 from .probes.icmp import run_icmp_probe
 from .probes.interface import collect_interface_metrics
 from .probes.mtu import run_mtu_probe
-from .probes.route import parse_tracert_output
+from .probes.route import parse_traceroute_output, parse_tracert_output
 from .probes.tcp import run_tcp_probe
 from .probes.throughput import run_throughput_probe
 
@@ -209,6 +209,69 @@ class RouteParserTests(TestCase):
         self.assertEqual(hops, [])
 
 
+class TracerouteParserTests(TestCase):
+    """Unix (Linux/macOS) `traceroute -n` output — IP address comes right after the hop number."""
+
+    def test_parses_successful_hop(self):
+        output = ' 1  192.168.1.1  1.234 ms  1.123 ms  1.045 ms\n'
+
+        hops = parse_traceroute_output(output)
+
+        self.assertEqual(hops, [{
+            'hop_number': 1, 'ip_address': '192.168.1.1', 'hostname': '', 'rtt_ms': 1.045, 'timeout': False,
+        }])
+
+    def test_parses_fully_timed_out_hop(self):
+        output = ' 5  * * *\n'
+
+        hops = parse_traceroute_output(output)
+
+        self.assertEqual(hops, [{
+            'hop_number': 5, 'ip_address': '', 'hostname': '', 'rtt_ms': None, 'timeout': True,
+        }])
+
+    def test_parses_partially_timed_out_hop(self):
+        output = ' 4  93.184.216.34  10.123 ms  * 10.456 ms\n'
+
+        hops = parse_traceroute_output(output)
+
+        self.assertEqual(hops[0]['ip_address'], '93.184.216.34')
+        self.assertEqual(hops[0]['rtt_ms'], 10.123)
+        self.assertFalse(hops[0]['timeout'])
+
+    def test_ignores_non_hop_lines(self):
+        output = 'traceroute to 1.1.1.1 (1.1.1.1), 30 hops max, 60 byte packets\n'
+
+        hops = parse_traceroute_output(output)
+
+        self.assertEqual(hops, [])
+
+
+class RunTracerouteDispatchTests(TestCase):
+    """Confirms the right binary/parser is chosen per platform — no real subprocess call."""
+
+    @patch('apps.measurements.probes.route.subprocess.run')
+    def test_uses_tracert_on_windows(self, mock_run):
+        from .probes.route import run_traceroute
+
+        mock_run.return_value = MagicMock(stdout='')
+        with patch('apps.measurements.probes.route.sys.platform', 'win32'):
+            run_traceroute('1.1.1.1')
+
+        self.assertEqual(mock_run.call_args.args[0][0], 'tracert')
+
+    @patch('apps.measurements.probes.route.subprocess.run')
+    def test_uses_traceroute_on_linux(self, mock_run):
+        from .probes.route import run_traceroute
+
+        mock_run.return_value = MagicMock(stdout='')
+        with patch('apps.measurements.probes.route.sys.platform', 'linux'):
+            run_traceroute('1.1.1.1')
+
+        self.assertEqual(mock_run.call_args.args[0][0], 'traceroute')
+        self.assertIn('-n', mock_run.call_args.args[0])
+
+
 class MTUProbeTests(TestCase):
     @patch('apps.measurements.probes.mtu._ping_df')
     def test_binary_search_finds_boundary(self, mock_ping_df):
@@ -224,6 +287,29 @@ class MTUProbeTests(TestCase):
 
         self.assertEqual(result['largest_successful_size'], 1400)
         self.assertEqual(result['df_behavior'], 'df_honored_fragmentation_needed')
+
+    def test_linux_ping_command_uses_M_do_and_seconds_timeout(self):
+        from .probes.mtu import _ping_df_command
+
+        with patch('apps.measurements.probes.mtu.sys.platform', 'linux'):
+            command = _ping_df_command('1.2.3.4', 1400, 2000)
+
+        self.assertEqual(command, ['ping', '-c', '1', '-M', 'do', '-s', '1400', '-W', '2', '1.2.3.4'])
+
+    def test_macos_ping_command_uses_D_flag_and_ms_timeout(self):
+        from .probes.mtu import _ping_df_command
+
+        with patch('apps.measurements.probes.mtu.sys.platform', 'darwin'):
+            command = _ping_df_command('1.2.3.4', 1400, 2000)
+
+        self.assertEqual(command, ['ping', '-c', '1', '-D', '-s', '1400', '-W', '2000', '1.2.3.4'])
+
+    def test_linux_success_detected_from_bytes_from(self):
+        from .probes.mtu import _ping_success
+
+        with patch('apps.measurements.probes.mtu.sys.platform', 'linux'):
+            self.assertTrue(_ping_success('64 bytes from 1.2.3.4: icmp_seq=1 ttl=64 time=1.23 ms'))
+            self.assertFalse(_ping_success('ping: local error: Message too long, mtu=1492'))
 
 
 class ThroughputProbeTests(TestCase):

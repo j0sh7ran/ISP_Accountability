@@ -57,21 +57,57 @@ class RetentionPolicySeedTests(TestCase):
 
 
 class ElevationTests(TestCase):
-    def test_is_elevated_returns_a_bool_on_windows(self):
+    def test_is_elevated_returns_a_bool_or_none_for_the_real_platform(self):
         import sys
 
         from .elevation import is_elevated
 
         result = is_elevated()
-        if sys.platform == 'win32':
+        if sys.platform in ('win32', 'linux', 'darwin'):
             self.assertIn(result, (True, False))
         else:
             self.assertIsNone(result)
 
-    def test_is_elevated_none_on_non_windows(self):
+    def test_windows_admin_true(self):
         from unittest.mock import patch
 
         from .elevation import is_elevated
 
-        with patch('apps.core.elevation.sys.platform', 'linux'):
+        with patch('apps.core.elevation.sys.platform', 'win32'), \
+                patch('apps.core.elevation.ctypes.windll.shell32.IsUserAnAdmin', return_value=1, create=True):
+            self.assertTrue(is_elevated())
+
+    def test_windows_non_admin_false(self):
+        from unittest.mock import patch
+
+        from .elevation import is_elevated
+
+        with patch('apps.core.elevation.sys.platform', 'win32'), \
+                patch('apps.core.elevation.ctypes.windll.shell32.IsUserAnAdmin', return_value=0, create=True):
+            self.assertFalse(is_elevated())
+
+    def test_linux_root_true(self):
+        from unittest.mock import patch
+
+        from .elevation import is_elevated
+
+        with patch('apps.core.elevation.sys.platform', 'linux'), \
+                patch('apps.core.elevation.os.geteuid', return_value=0, create=True):
+            self.assertTrue(is_elevated())
+
+    def test_macos_non_root_false(self):
+        from unittest.mock import patch
+
+        from .elevation import is_elevated
+
+        with patch('apps.core.elevation.sys.platform', 'darwin'), \
+                patch('apps.core.elevation.os.geteuid', return_value=501, create=True):
+            self.assertFalse(is_elevated())
+
+    def test_none_on_unrecognized_platform(self):
+        from unittest.mock import patch
+
+        from .elevation import is_elevated
+
+        with patch('apps.core.elevation.sys.platform', 'freebsd13'):
             self.assertIsNone(is_elevated())
